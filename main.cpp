@@ -177,3 +177,169 @@ public:
 		return 1500.0;
 	}
 };
+//Customer class
+class Customer {
+    string name;
+    string contact;
+    string idNumber;
+    int bookedRoomNumber;
+    int daysOfStay;
+    Date checkIn;
+    Date checkOut;
+    int loyaltyPoints;
+    Service* services[5];
+    int serviceCount;
+
+public:
+    Customer(string n = "", string c = "", string id = ""): name(n), contact(c), idNumber(id), bookedRoomNumber(-1), daysOfStay(0), loyaltyPoints(0), serviceCount(0) {}
+
+    void assignRoom(Room* r, int days, Date in, Date out) {
+    	if (r) {
+    		bookedRoomNumber = r->getRoomNumber();
+		} else {
+			bookedRoomNumber = -1;
+		}
+		
+    	daysOfStay = days;
+    	checkIn = in;
+    	checkOut = out;
+	}
+
+    void addService(Service* s) {
+        if (serviceCount < 5) {
+            services[serviceCount++] = s;
+        } else {
+            throw runtime_error("Maximum service limit reached for this customer.");
+        }
+    }
+
+    double generateInvoice(Room* r) const {
+        if (!r) {
+        	return 0;
+		}
+        double total = r->calculateBill(daysOfStay);
+        for (int i = 0; i < serviceCount; i++) {
+            total += services[i]->getServiceCharge();
+        }
+        if (loyaltyPoints >= 100) {
+        	total *= 0.9; // 10% discount
+		}
+        return total;
+    }
+
+    void updateLoyaltyPoints() {
+        loyaltyPoints += daysOfStay * 10;
+    }
+
+    void clearRoomAssignment() {
+        bookedRoomNumber = -1;
+        daysOfStay = 0;
+    }
+
+    void displayCustomerDetails() const {
+        cout << "Name: " << name << ", Contact: " << contact << ", ID: " << idNumber << endl;
+        cout << "Room #: " << bookedRoomNumber << ", Stay: " << daysOfStay << " days" << endl;
+        cout << "Check-in: ";
+		checkIn.display();
+        cout << ", Check-out: ";
+		checkOut.display();
+        cout << "\nLoyalty Points: " << loyaltyPoints << endl;
+
+        if (serviceCount > 0) {
+            cout << "Add-on Services: ";
+            for (int i = 0; i < serviceCount; i++) {
+                cout << services[i]->getServiceName();
+                if (i < serviceCount - 1) {
+                	cout << ", ";
+				}
+            }
+            cout << endl;
+        }
+    }
+    // Getters
+    string getName() const {
+		return name;
+	}
+    string getID() const {
+		return idNumber;
+	}
+    int getRoomNumber() const {
+		return bookedRoomNumber;
+	}
+    Date getCheckIn() const {
+		return checkIn;
+	}
+    Date getCheckOut() const {
+		return checkOut;
+	}
+};
+
+//Booking class
+class Booking {
+    static int bookingCounter;
+    int bookingID;
+    string status;
+    Customer* customer;
+    Room* room;
+    Date bookingDate;
+    Date checkOutDate;
+    double totalBill;
+
+public:
+    Booking(Customer* cust, Room* rm, const Date& in, const Date& out): customer(cust), room(rm), bookingDate(in), checkOutDate(out), status("Confirmed") {
+        bookingID = ++bookingCounter;
+        totalBill = 0;
+    }
+
+    void confirmBooking() {
+        if (!room->isRoomAvailable()) {
+            throw runtime_error("Room is not available for booking.");
+        }
+        room->bookRoom();
+        status = "Confirmed";
+    }
+
+    void cancelBooking() {
+        status = "Cancelled";
+        room->vacateRoom();
+    }
+
+    void setStatus(string s) {
+		status = s;
+	}
+
+    string getStatus() const {
+		return status;
+	}
+    int getBookingID() const {
+		return bookingID;
+	}
+
+    Room* getRoom() const {
+		return room;
+	}
+    Customer* getCustomer() const {
+		return customer;
+	}
+
+    Date getStartDate() const {
+		return bookingDate;
+	}
+    Date getEndDate() const {
+		return checkOutDate;
+	}
+
+    bool conflictsWith(const Date& in, const Date& out) const {
+        return !(out < bookingDate || in > checkOutDate);
+    }
+
+    void displayBookingDetails() const {
+        cout << "Booking ID: " << bookingID << ", Status: " << status << ", Room #: " << room->getRoomNumber() << ", Customer: " << customer->getName();
+        cout << "Check-in: ";
+		bookingDate.display();
+        cout << ", Check-out: ";
+		checkOutDate.display();
+        cout << endl;
+    }
+};
+int Booking::bookingCounter = 0;  
